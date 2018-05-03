@@ -21,6 +21,17 @@ import googlenet
 #import nin
 #import resnet50
 
+ARCHS = {
+    #'alex': alex.Alex,
+    #'alex_fp16': alex.AlexFp16,
+    'googlenet': googlenet.GoogLeNet,
+    #'googlenetbn': googlenetbn.GoogLeNetBN,
+    #'googlenetbn_fp16': googlenetbn.GoogLeNetBNFp16,
+    #'nin': nin.NIN,
+    #'resnet50': resnet50.ResNet50,
+    #'resnext50': resnet50.ResNeXt50,
+}
+    
 
 class PreprocessedDataset(chainer.dataset.DatasetMixin):
 
@@ -63,50 +74,9 @@ class PreprocessedDataset(chainer.dataset.DatasetMixin):
         return image, label
 
 
-def main():
-    archs = {
-        #'alex': alex.Alex,
-        #'alex_fp16': alex.AlexFp16,
-        'googlenet': googlenet.GoogLeNet,
-        #'googlenetbn': googlenetbn.GoogLeNetBN,
-        #'googlenetbn_fp16': googlenetbn.GoogLeNetBNFp16,
-        'nin': nin.NIN,
-        #'resnet50': resnet50.ResNet50,
-        #'resnext50': resnet50.ResNeXt50,
-    }
-
-    parser = argparse.ArgumentParser(
-        description='Learning convnet from ILSVRC2012 dataset')
-    parser.add_argument('train', help='Path to training image-label list file')
-    parser.add_argument('val', help='Path to validation image-label list file')
-    parser.add_argument('--arch', '-a', choices=archs.keys(), default='nin',
-                        help='Convnet architecture')
-    parser.add_argument('--batchsize', '-B', type=int, default=32,
-                        help='Learning minibatch size')
-    parser.add_argument('--epoch', '-E', type=int, default=10,
-                        help='Number of epochs to train')
-    parser.add_argument('--gpu', '-g', type=int, default=-1,
-                        help='GPU ID (negative value indicates CPU')
-    parser.add_argument('--initmodel',
-                        help='Initialize the model from given file')
-    parser.add_argument('--loaderjob', '-j', type=int,
-                        help='Number of parallel data loading processes')
-    parser.add_argument('--mean', '-m', default='mean.npy',
-                        help='Mean file (computed by compute_mean.py)')
-    parser.add_argument('--resume', '-r', default='',
-                        help='Initialize the trainer from given file')
-    parser.add_argument('--out', '-o', default='result',
-                        help='Output directory')
-    parser.add_argument('--root', '-R', default='.',
-                        help='Root directory path of image files')
-    parser.add_argument('--val_batchsize', '-b', type=int, default=250,
-                        help='Validation minibatch size')
-    parser.add_argument('--test', action='store_true')
-    parser.set_defaults(test=False)
-    args = parser.parse_args()
-
+def train(args):
     # Initialize the model to train
-    model = archs[args.arch]()
+    model = ARCHS[args.arch]()
     if args.initmodel:
         print('Load model from {}'.format(args.initmodel))
         chainer.serializers.load_npz(args.initmodel, model)
@@ -159,8 +129,41 @@ def main():
     with chainer.using_config('train', True):
         trainer.run()
 
-    trainer.run()
+
+def parse_argument():
+
+    parser = argparse.ArgumentParser(
+        description='Learning convnet from ILSVRC2012 dataset')
+    parser.add_argument('train', help='Path to training image-label list file')
+    parser.add_argument('val', help='Path to validation image-label list file')
+    parser.add_argument('--arch', '-a', choices=ARCHS.keys(), default='googlenet',
+                        help='Convnet architecture')
+    parser.add_argument('--batchsize', '-B', type=int, default=32,
+                        help='Learning minibatch size')
+    parser.add_argument('--epoch', '-E', type=int, default=10,
+                        help='Number of epochs to train')
+    parser.add_argument('--gpu', '-g', type=int, default=-1,
+                        help='GPU ID (negative value indicates CPU')
+    parser.add_argument('--initmodel',
+                        help='Initialize the model from given file')
+    parser.add_argument('--loaderjob', '-j', type=int,
+                        help='Number of parallel data loading processes')
+    parser.add_argument('--mean', '-m', default='mean.npy',
+                        help='Mean file (computed by compute_mean.py)')
+    parser.add_argument('--resume', '-r', default='',
+                        help='Initialize the trainer from given file')
+    parser.add_argument('--out', '-o', default='result',
+                        help='Output directory')
+    parser.add_argument('--root', '-R', default='.',
+                        help='Root directory path of image files')
+    parser.add_argument('--val_batchsize', '-b', type=int, default=250,
+                        help='Validation minibatch size')
+    parser.add_argument('--test', action='store_true')
+    parser.set_defaults(test=False)
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_argument()
+    train(args)
