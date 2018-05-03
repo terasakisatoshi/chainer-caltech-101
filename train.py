@@ -18,7 +18,7 @@ from chainer.training import extensions
 #import alex
 import googlenet
 #import googlenetbn
-import nin
+#import nin
 #import resnet50
 
 
