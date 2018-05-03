@@ -36,6 +36,7 @@ def predict():
     chainer.serializers.load_npz(os.path.join(
         model_dir, 'model_epoch_{}.npz'.format(epoch)), model)
     paths = glob("reshaped/buddha/image_*.jpg")
+    accuracy_cnt = 0
     for img_path in paths:
         image = imageio.imread(img_path)
         image = image.transpose(2, 0, 1).astype(np.float32)
@@ -54,6 +55,9 @@ def predict():
             y = model.predict(np.array([image]))
         idx = np.argmax(y.data[0])
         print(labels[idx])
+        if idx == 0:
+            accuracy_cnt+=1
+    print("total accuracy rate = ", accuracy_cnt/len(paths))
 
 
 def main():
