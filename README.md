@@ -13,7 +13,7 @@ $ wget http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategor
 ## reshape image data
 
 ```console
-$ python reshape.py 101_ObjectCategories reshaped
+$ python reshape.py --source_dir 101_ObjectCategories --target_dir reshaped
 ```
 
 ## create dataset file
