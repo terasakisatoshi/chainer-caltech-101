@@ -6,6 +6,7 @@ second column is zero-origin label (this format is same as that used by Caffe's
 ImageDataLayer).
 """
 import argparse
+import os
 import random
 
 import numpy as np
@@ -17,9 +18,20 @@ from chainer.training import extensions
 #import alex
 import googlenet
 #import googlenetbn
-import nin
+#import nin
 #import resnet50
 
+ARCHS = {
+    #'alex': alex.Alex,
+    #'alex_fp16': alex.AlexFp16,
+    'googlenet': googlenet.GoogLeNet,
+    #'googlenetbn': googlenetbn.GoogLeNetBN,
+    #'googlenetbn_fp16': googlenetbn.GoogLeNetBNFp16,
+    #'nin': nin.NIN,
+    #'resnet50': resnet50.ResNet50,
+    #'resnext50': resnet50.ResNeXt50,
+}
+    
 
 class PreprocessedDataset(chainer.dataset.DatasetMixin):
 
@@ -62,50 +74,9 @@ class PreprocessedDataset(chainer.dataset.DatasetMixin):
         return image, label
 
 
-def main():
-    archs = {
-        #'alex': alex.Alex,
-        #'alex_fp16': alex.AlexFp16,
-        'googlenet': googlenet.GoogLeNet,
-        #'googlenetbn': googlenetbn.GoogLeNetBN,
-        #'googlenetbn_fp16': googlenetbn.GoogLeNetBNFp16,
-        'nin': nin.NIN,
-        #'resnet50': resnet50.ResNet50,
-        #'resnext50': resnet50.ResNeXt50,
-    }
-
-    parser = argparse.ArgumentParser(
-        description='Learning convnet from ILSVRC2012 dataset')
-    parser.add_argument('train', help='Path to training image-label list file')
-    parser.add_argument('val', help='Path to validation image-label list file')
-    parser.add_argument('--arch', '-a', choices=archs.keys(), default='nin',
-                        help='Convnet architecture')
-    parser.add_argument('--batchsize', '-B', type=int, default=32,
-                        help='Learning minibatch size')
-    parser.add_argument('--epoch', '-E', type=int, default=10,
-                        help='Number of epochs to train')
-    parser.add_argument('--gpu', '-g', type=int, default=-1,
-                        help='GPU ID (negative value indicates CPU')
-    parser.add_argument('--initmodel',
-                        help='Initialize the model from given file')
-    parser.add_argument('--loaderjob', '-j', type=int,
-                        help='Number of parallel data loading processes')
-    parser.add_argument('--mean', '-m', default='mean.npy',
-                        help='Mean file (computed by compute_mean.py)')
-    parser.add_argument('--resume', '-r', default='',
-                        help='Initialize the trainer from given file')
-    parser.add_argument('--out', '-o', default='result',
-                        help='Output directory')
-    parser.add_argument('--root', '-R', default='.',
-                        help='Root directory path of image files')
-    parser.add_argument('--val_batchsize', '-b', type=int, default=250,
-                        help='Validation minibatch size')
-    parser.add_argument('--test', action='store_true')
-    parser.set_defaults(test=False)
-    args = parser.parse_args()
-
+def train(args):
     # Initialize the model to train
-    model = archs[args.arch]()
+    model = ARCHS[args.arch]()
     if args.initmodel:
         print('Load model from {}'.format(args.initmodel))
         chainer.serializers.load_npz(args.initmodel, model)
@@ -132,7 +103,7 @@ def main():
     # Set up a trainer
     updater = training.updaters.StandardUpdater(
         train_iter, optimizer, device=args.gpu)
-    trainer = training.Trainer(updater, (args.epoch, 'epoch'), args.out)
+    trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=args.out)
 
     val_interval = (1 if args.test else 100000), 'iteration'
     log_interval = (1 if args.test else 1000), 'iteration'
@@ -140,10 +111,10 @@ def main():
     trainer.extend(extensions.Evaluator(val_iter, model, device=args.gpu),
                    trigger=val_interval)
     trainer.extend(extensions.dump_graph('main/loss'))
-    trainer.extend(extensions.snapshot(), trigger=val_interval)
+    trainer.extend(extensions.snapshot(
+        filename='snapshot_epoch_{.updater.epoch}.npz'), trigger=log_interval)
     trainer.extend(extensions.snapshot_object(
-        model, 'model_iter_{.updater.iteration}'), trigger=val_interval)
-    # Be careful to pass the interval directly to LogReport
+        model, 'model_epoch_{.updater.epoch}.npz'), trigger=log_interval)    # Be careful to pass the interval directly to LogReport
     # (it determines when to emit log rather than when to read observations)
     trainer.extend(extensions.LogReport(trigger=log_interval))
     trainer.extend(extensions.observe_lr(), trigger=log_interval)
@@ -155,9 +126,44 @@ def main():
 
     if args.resume:
         chainer.serializers.load_npz(args.resume, trainer)
+    with chainer.using_config('train', True):
+        trainer.run()
 
-    trainer.run()
+
+def parse_argument():
+
+    parser = argparse.ArgumentParser(
+        description='Learning convnet from ILSVRC2012 dataset')
+    parser.add_argument('train', help='Path to training image-label list file')
+    parser.add_argument('val', help='Path to validation image-label list file')
+    parser.add_argument('--arch', '-a', choices=ARCHS.keys(), default='googlenet',
+                        help='Convnet architecture')
+    parser.add_argument('--batchsize', '-B', type=int, default=32,
+                        help='Learning minibatch size')
+    parser.add_argument('--epoch', '-E', type=int, default=10,
+                        help='Number of epochs to train')
+    parser.add_argument('--gpu', '-g', type=int, default=-1,
+                        help='GPU ID (negative value indicates CPU')
+    parser.add_argument('--initmodel',
+                        help='Initialize the model from given file')
+    parser.add_argument('--loaderjob', '-j', type=int,
+                        help='Number of parallel data loading processes')
+    parser.add_argument('--mean', '-m', default='mean.npy',
+                        help='Mean file (computed by compute_mean.py)')
+    parser.add_argument('--resume', '-r', default='',
+                        help='Initialize the trainer from given file')
+    parser.add_argument('--out', '-o', default='result',
+                        help='Output directory')
+    parser.add_argument('--root', '-R', default='.',
+                        help='Root directory path of image files')
+    parser.add_argument('--val_batchsize', '-b', type=int, default=250,
+                        help='Validation minibatch size')
+    parser.add_argument('--test', action='store_true')
+    parser.set_defaults(test=False)
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_argument()
+    train(args)
