@@ -99,3 +99,17 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+label\.txt
+
+test\.txt
+
+train\.txt
+
+mean\.npy
+
+101_ObjectCategories/
+
+reshaped/
+
+result/
