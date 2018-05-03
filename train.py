@@ -103,7 +103,7 @@ def train(args):
     # Set up a trainer
     updater = training.updaters.StandardUpdater(
         train_iter, optimizer, device=args.gpu)
-    trainer = training.Trainer(updater, (args.epoch, 'epoch'), args.out)
+    trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=args.out)
 
     val_interval = (1 if args.test else 100000), 'iteration'
     log_interval = (1 if args.test else 1000), 'iteration'
@@ -111,10 +111,10 @@ def train(args):
     trainer.extend(extensions.Evaluator(val_iter, model, device=args.gpu),
                    trigger=val_interval)
     trainer.extend(extensions.dump_graph('main/loss'))
-    trainer.extend(extensions.snapshot(), trigger=val_interval)
+    trainer.extend(extensions.snapshot(
+        filename='snapshot_epoch_{.updater.epoch}.npz'), trigger=log_interval)
     trainer.extend(extensions.snapshot_object(
-        model, 'model_iter_{.updater.iteration}'), trigger=val_interval)
-    # Be careful to pass the interval directly to LogReport
+        model, 'model_epoch_{.updater.epoch}.npz'), trigger=log_interval)    # Be careful to pass the interval directly to LogReport
     # (it determines when to emit log rather than when to read observations)
     trainer.extend(extensions.LogReport(trigger=log_interval))
     trainer.extend(extensions.observe_lr(), trigger=log_interval)
