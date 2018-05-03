@@ -4,6 +4,7 @@ import os
 import numpy as np
 import chainer
 import imageio
+from chainer.backends.intel64 import is_ideep_available
 
 import googlenet
 
@@ -27,7 +28,7 @@ def find_max_epoch(model_dir="result"):
     return max_epoch
 
 
-def predict():
+def predict(enable_ideep):
     labels = load_label()
     model_dir = "result"
     epoch = find_max_epoch(model_dir)
@@ -35,6 +36,10 @@ def predict():
     print("loading...", epoch)
     chainer.serializers.load_npz(os.path.join(
         model_dir, 'model_epoch_{}.npz'.format(epoch)), model)
+
+    if enable_ideep:
+        model.to_intel64()
+
     paths = glob("reshaped/buddha/image_*.jpg")
     accuracy_cnt = 0
     for img_path in paths:
@@ -51,17 +56,23 @@ def predict():
         image = image[:, top:bottom, left:right]
         image -= mean[:, top:bottom, left:right]
         image *= (1.0 / 255.0)  # Scale to [0, 1]
-        with chainer.using_config('train', False):
+
+        if enable_ideep:
+            mode = "always"
+        else:
+            mode = "never"
+        with chainer.using_config('train', False), chainer.using_config('use_ideep', mode):
             y = model.predict(np.array([image]))
         idx = np.argmax(y.data[0])
         print(labels[idx])
         if idx == 0:
-            accuracy_cnt+=1
+            accuracy_cnt += 1
     print("total accuracy rate = ", accuracy_cnt/len(paths))
 
 
 def main():
-    predict()
+    enable_ideep = is_ideep_available()
+    predict(enable_ideep)
 
 
 if __name__ == '__main__':
