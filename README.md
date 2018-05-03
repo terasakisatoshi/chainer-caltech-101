@@ -35,4 +35,4 @@ $ python train.py train.txt test.txt -a googlenet
 
 # misc
 
-I uploaded output files `train.txt, test.txt, label.txt` and `mean.npy`
+I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model `pretraind_googlenet.npz` in `/example`
