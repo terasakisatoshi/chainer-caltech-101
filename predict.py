@@ -33,6 +33,8 @@ def predict(enable_ideep):
     model_dir = "result"
     epoch = find_max_epoch(model_dir)
     model = googlenet.GoogLeNet()
+    mean = np.load("mean.npy")
+
     print("loading...", epoch)
     chainer.serializers.load_npz(os.path.join(
         model_dir, 'model_epoch_{}.npz'.format(epoch)), model)
@@ -45,7 +47,6 @@ def predict(enable_ideep):
     for img_path in paths:
         image = imageio.imread(img_path)
         image = image.transpose(2, 0, 1).astype(np.float32)
-        mean = np.load("mean.npy")
         _, h, w = image.shape
         crop_size = model.insize
         top = (h - crop_size) // 2
