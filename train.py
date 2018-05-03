@@ -6,6 +6,7 @@ second column is zero-origin label (this format is same as that used by Caffe's
 ImageDataLayer).
 """
 import argparse
+import os
 import random
 
 import numpy as np
