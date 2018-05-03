@@ -156,6 +156,8 @@ def main():
 
     if args.resume:
         chainer.serializers.load_npz(args.resume, trainer)
+    with chainer.using_config('train', True):
+        trainer.run()
 
     trainer.run()
 
