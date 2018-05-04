@@ -68,7 +68,7 @@ def predict(enable_ideep):
         print(labels[idx])
         if idx == 0:
             accuracy_cnt += 1
-    print("total accuracy rate = ", accuracy_cnt/len(paths))
+    print("total accuracy rate = ", accuracy_cnt / len(paths))
 
 
 def main():
