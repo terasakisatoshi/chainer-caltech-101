@@ -62,13 +62,13 @@ def predict(enable_ideep):
             mode = "always"
         else:
             mode = "never"
-        with chainer.using_config('train', False), chainer.using_config('use_ideep', mode):
+        with chainer.using_config('train', False), chainer.using_config('enable_backprop', False), chainer.using_config('use_ideep', mode):
             y = model.predict(np.array([image]))
         idx = np.argmax(y.data[0])
         print(labels[idx])
         if idx == 0:
             accuracy_cnt += 1
-    print("total accuracy rate = ", accuracy_cnt/len(paths))
+    print("total accuracy rate = ", accuracy_cnt / len(paths))
 
 
 def main():
