@@ -30,7 +30,7 @@ This creates `train.txt, test.txt, label.txt`
 $ python compute_mean.py train.txt
 ```
 
-## train google net
+## train GoogLeNet
 ```console
 $ python train.py train.txt test.txt -a googlenet
 ```
