@@ -7,7 +7,7 @@ import chainer
 import cv2
 from chainer.backends.intel64 import is_ideep_available
 
-import googlenet
+from train import ARCHS
 
 
 def load_label():
@@ -29,13 +29,13 @@ def find_max_epoch(model_dir="result"):
     return max_epoch
 
 
-def predict(model_dir, use_ideep):
+def predict(arch, model_dir, use_ideep):
     labels = load_label()
     epoch = find_max_epoch(model_dir)
-    model = googlenet.GoogLeNet()
+    model = ARCHS[arch]()
     mean = np.load("mean.npy")
 
-    print("loading...", epoch)
+    print("loading...model_epoch_{}".format(epoch))
     chainer.serializers.load_npz(os.path.join(
         model_dir, 'model_epoch_{}.npz'.format(epoch)), model)
 
@@ -63,7 +63,7 @@ def predict(model_dir, use_ideep):
         with chainer.using_config('train', False), \
                 chainer.using_config('enable_backprop', False), \
                 chainer.using_config('use_ideep', mode):
-            y = model.predict(np.array([image]))
+            y = model.forward(np.array([image]))
         idx = np.argmax(y.data[0])
         print(labels[idx])
         if idx == 0:
@@ -75,6 +75,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--trained', type=str, default='result')
     parser.add_argument('--ideep', action='store_true')
+    parser.add_argument('--arch', '-a', choices=ARCHS.keys(), default='googlenet',
+                        help='Convnet architecture')
     args = parser.parse_args()
     return args
 
@@ -88,8 +90,7 @@ def main():
         else:
             print('>> you can use ideep to accelerate inference speed')
             print('>> with optional argument --ideep')
-    predict(args.trained, use_ideep)
-
+    predict(args.arch, args.trained, use_ideep)
 
 if __name__ == '__main__':
     main()
