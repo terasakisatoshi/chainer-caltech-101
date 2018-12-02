@@ -58,13 +58,36 @@ If you install `ideep4py` you can accelerate  the inference speed with optional 
 python predict.py --ideep
 ```
 
-# Appendix
-
-I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model in `./example`.
-
+I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model of GoogLeNet in `./example`.
+You can use it by doing the following command.
 ```
 python predict.py --trained ./example
 ```
+
+# ChainerX
+
+Chainer Team has released new backend called `ChainerX` its learning speed is crazy fast for MNIST.
+
+## How to install ChainerX
+
+Go to official Chainer repository. You can access from README.md
+
+or read my post of Qiita (written in Japanese) https://qiita.com/SatoshiTerasaki/items/defbb1ea49b88c452118
+
+## train ResNet50
+
+They are also prepare training script of ImageNet (base net is ResNet50).
+I take these scripts from https://github.com/chainer/chainer/blob/master/chainerx_cc/examples/imagenet/train_imagenet.py.
+And then what to do is...
+
+```
+python train_chx_resnet.py train.txt test.txt -j 8 -d cuda:0
+```
+
+## predict
+
+For now (2018/12/02) It seems ChainerX team do not release feature of save model. like `chainer.serializers.save_npz`.
+But I think you can do it.
 
 # References
 

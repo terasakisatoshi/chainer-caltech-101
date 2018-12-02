@@ -15,63 +15,14 @@ import chainer
 from chainer import training
 from chainer.training import extensions
 
-#import alex
-import googlenet
-#import googlenetbn
-#import nin
-#import resnet50
+from image_dataset import PreprocessedDataset
+from imagenet import googlenet
+from imagenet import resnet50
 
 ARCHS = {
-    #'alex': alex.Alex,
-    #'alex_fp16': alex.AlexFp16,
     'googlenet': googlenet.GoogLeNet,
-    #'googlenetbn': googlenetbn.GoogLeNetBN,
-    #'googlenetbn_fp16': googlenetbn.GoogLeNetBNFp16,
-    #'nin': nin.NIN,
-    #'resnet50': resnet50.ResNet50,
-    #'resnext50': resnet50.ResNeXt50,
+    'resnet50': resnet50.ResNet50,
 }
-    
-
-class PreprocessedDataset(chainer.dataset.DatasetMixin):
-
-    def __init__(self, path, root, mean, crop_size, random=True):
-        self.base = chainer.datasets.LabeledImageDataset(path, root)
-        self.mean = mean.astype(np.float32)
-        self.crop_size = crop_size
-        self.random = random
-
-    def __len__(self):
-        return len(self.base)
-
-    def get_example(self, i):
-        # It reads the i-th image/label pair and return a preprocessed image.
-        # It applies following preprocesses:
-        #     - Cropping (random or center rectangular)
-        #     - Random flip
-        #     - Scaling to [0, 1] value
-        crop_size = self.crop_size
-
-        image, label = self.base[i]
-        _, h, w = image.shape
-
-        if self.random:
-            # Randomly crop a region and flip the image
-            top = random.randint(0, h - crop_size - 1)
-            left = random.randint(0, w - crop_size - 1)
-            if random.randint(0, 1):
-                image = image[:, :, ::-1]
-        else:
-            # Crop the center
-            top = (h - crop_size) // 2
-            left = (w - crop_size) // 2
-        bottom = top + crop_size
-        right = left + crop_size
-
-        image = image[:, top:bottom, left:right]
-        image -= self.mean[:, top:bottom, left:right]
-        image *= (1.0 / 255.0)  # Scale to [0, 1]
-        return image, label
 
 
 def train(args):
@@ -159,6 +110,7 @@ def parse_argument():
     parser.add_argument('--val_batchsize', '-b', type=int, default=250,
                         help='Validation minibatch size')
     parser.add_argument('--test', action='store_true')
+
     parser.set_defaults(test=False)
     args = parser.parse_args()
     return args
@@ -166,4 +118,5 @@ def parse_argument():
 
 if __name__ == '__main__':
     args = parse_argument()
+    print(args)
     train(args)

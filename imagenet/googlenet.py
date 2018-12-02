@@ -13,15 +13,15 @@ class GoogLeNet(chainer.Chain):
     def __init__(self):
         super(GoogLeNet, self).__init__()
         with self.init_scope():
-            self.conv1 = L.Convolution2D(None,  64, 7, stride=2, pad=3)
-            self.conv2_reduce = L.Convolution2D(None,  64, 1)
+            self.conv1 = L.Convolution2D(None, 64, 7, stride=2, pad=3)
+            self.conv2_reduce = L.Convolution2D(None, 64, 1)
             self.conv2 = L.Convolution2D(None, 192, 3, stride=1, pad=1)
-            self.inc3a = L.Inception(None,  64,  96, 128, 16,  32,  32)
-            self.inc3b = L.Inception(None, 128, 128, 192, 32,  96,  64)
-            self.inc4a = L.Inception(None, 192,  96, 208, 16,  48,  64)
-            self.inc4b = L.Inception(None, 160, 112, 224, 24,  64,  64)
-            self.inc4c = L.Inception(None, 128, 128, 256, 24,  64,  64)
-            self.inc4d = L.Inception(None, 112, 144, 288, 32,  64,  64)
+            self.inc3a = L.Inception(None, 64, 96, 128, 16, 32, 32)
+            self.inc3b = L.Inception(None, 128, 128, 192, 32, 96, 64)
+            self.inc4a = L.Inception(None, 192, 96, 208, 16, 48, 64)
+            self.inc4b = L.Inception(None, 160, 112, 224, 24, 64, 64)
+            self.inc4c = L.Inception(None, 128, 128, 256, 24, 64, 64)
+            self.inc4d = L.Inception(None, 112, 144, 288, 32, 64, 64)
             self.inc4e = L.Inception(None, 256, 160, 320, 32, 128, 128)
             self.inc5a = L.Inception(None, 256, 160, 320, 32, 128, 128)
             self.inc5b = L.Inception(None, 384, 192, 384, 48, 128, 128)
@@ -35,7 +35,7 @@ class GoogLeNet(chainer.Chain):
             self.loss2_fc1 = L.Linear(None, 1024)
             self.loss2_fc2 = L.Linear(None, 1000)
 
-    def calc(self, x, t=None):
+    def forward(self, x, t=None):
         h = F.relu(self.conv1(x))
         h = F.local_response_normalization(
             F.max_pooling_2d(h, 3, stride=2), n=5)
@@ -89,7 +89,7 @@ class GoogLeNet(chainer.Chain):
             self.out = h
 
     def __call__(self, x, t):
-        self.calc(x, t)
+        self.forward(x, t)
         chainer.report({
             'loss': self.loss,
             'loss1': self.loss1,
@@ -98,7 +98,3 @@ class GoogLeNet(chainer.Chain):
             'accuracy': self.accuracy
         }, self)
         return self.loss
-
-    def predict(self, x):
-        self.calc(x)
-        return self.out
