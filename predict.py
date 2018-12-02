@@ -1,9 +1,10 @@
+import argparse
 from glob import glob
 import os
 
 import numpy as np
 import chainer
-import imageio
+import cv2
 from chainer.backends.intel64 import is_ideep_available
 
 import googlenet
@@ -28,9 +29,8 @@ def find_max_epoch(model_dir="result"):
     return max_epoch
 
 
-def predict(enable_ideep):
+def predict(model_dir, use_ideep):
     labels = load_label()
-    model_dir = "result"
     epoch = find_max_epoch(model_dir)
     model = googlenet.GoogLeNet()
     mean = np.load("mean.npy")
@@ -39,13 +39,15 @@ def predict(enable_ideep):
     chainer.serializers.load_npz(os.path.join(
         model_dir, 'model_epoch_{}.npz'.format(epoch)), model)
 
-    if enable_ideep:
+    if use_ideep:
         model.to_intel64()
-
+    mode = 'always' if use_ideep else 'never'
+    print('ideep mode = {}'.format(mode))
     paths = glob("reshaped/buddha/image_*.jpg")
     accuracy_cnt = 0
     for img_path in paths:
-        image = imageio.imread(img_path)
+        image = cv2.imread(img_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = image.transpose(2, 0, 1).astype(np.float32)
         _, h, w = image.shape
         crop_size = model.insize
@@ -58,11 +60,9 @@ def predict(enable_ideep):
         image -= mean[:, top:bottom, left:right]
         image *= (1.0 / 255.0)  # Scale to [0, 1]
 
-        if enable_ideep:
-            mode = "always"
-        else:
-            mode = "never"
-        with chainer.using_config('train', False), chainer.using_config('enable_backprop', False), chainer.using_config('use_ideep', mode):
+        with chainer.using_config('train', False), \
+                chainer.using_config('enable_backprop', False), \
+                chainer.using_config('use_ideep', mode):
             y = model.predict(np.array([image]))
         idx = np.argmax(y.data[0])
         print(labels[idx])
@@ -71,9 +71,24 @@ def predict(enable_ideep):
     print("total accuracy rate = ", accuracy_cnt / len(paths))
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--trained', type=str, default='result')
+    parser.add_argument('--ideep', action='store_true')
+    args = parser.parse_args()
+    return args
+
+
 def main():
-    enable_ideep = is_ideep_available()
-    predict(enable_ideep)
+    args = parse_arguments()
+    use_ideep = False
+    if is_ideep_available():
+        if args.ideep:
+            use_ideep = True
+        else:
+            print('>> you can use ideep to accelerate inference speed')
+            print('>> with optional argument --ideep')
+    predict(args.trained, use_ideep)
 
 
 if __name__ == '__main__':
