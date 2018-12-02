@@ -27,10 +27,12 @@ $ python reshape.py --source_dir 101_ObjectCategories --target_dir reshaped
 You will wait for few seconds.
 
 ## Create dataset file
+
 ```console
 $ python create_dataset.py reshaped
 ```
-It will `train.txt, test.txt, label.txt`
+
+It will create `train.txt, test.txt, label.txt`
 
 ## Calculate mean
 
@@ -39,13 +41,24 @@ $ python compute_mean.py train.txt
 ```
 
 ## Train GoogLeNet
+
 ```console
 $ python train.py train.txt test.txt -a googlenet -j 8 -g 0
 ```
 
+## Evaluate your trained model
+
+```
+python predict.py
+```
+
 # Appendix
 
-I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model `pretraind_googlenet.npz` in `/example`
+I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model `pretraind_googlenet.npz` in `./example`
+
+```
+python predict.py --trained ./example
+```
 
 # References
 
