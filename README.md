@@ -52,9 +52,15 @@ $ python train.py train.txt test.txt -a googlenet -j 8 -g 0
 python predict.py
 ```
 
+If you install `ideep4py` you can accelerate  the inference speed with optional argument `--ideep`.
+
+```
+python predict.py --ideep
+```
+
 # Appendix
 
-I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model `pretraind_googlenet.npz` in `./example`
+I uploaded output files `train.txt, test.txt, label.txt mean.npy` and pretraind model in `./example`.
 
 ```
 python predict.py --trained ./example
