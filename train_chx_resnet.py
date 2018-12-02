@@ -167,10 +167,13 @@ def main():
             if epoch >= args.epoch:
                 is_finished = True
 
+        """
+        AttributeError: 'ResNet50' object has no attribute 'serialize'
         if not os.path.exists('result_chx'):
             os.mkdir('result_chx')
         chainer.serializers.save_npz(os.path.join(
             'result_chx', 'model_epoch_{}.npz'.format(epoch)), model)
+        """
 
 if __name__ == '__main__':
     main()
